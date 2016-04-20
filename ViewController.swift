@@ -10,27 +10,40 @@ import UIKit
 
 class ViewController: UIViewController {
     
-    let buttonStack                     = UIStackView()
+    let buttonStack         = UIStackView()
     
-    let positiveButton                  = UIButton()
-    let negativeButton                  = UIButton()
+    let positiveButton      = UIButton()
+    let negativeButton      = UIButton()
     
-    let swipeRec = UITapGestureRecognizer()
+    let positiveKey: String = "positiveKey"
+    let negativeKey: String = "negativeKey"
     
-    // Could only get text from dictionary with one key, one value.
-    var positiveResponses = [
-        "positive1": "Yes",
-        "positive2": "Like",
-        "positive3": "Done",
-        "positive4": "Happy"
-    ]
+    let swipeRec            = UITapGestureRecognizer()
+    var swipeIndex          = 0;
     
-    var negativeResponses = [
-        "negative1": "No",
-        "negative2": "Don't Like",
-        "negative3": "More",
-        "negative4": "Sad"
-    ]
+    let smileFace: String   = "\n🙂"
+    let frownFace: String   = "\n🙁"
+    
+    private func possibleAnswersMap() -> [[String : String]] {
+        return [
+            [
+                positiveKey: "Yes" + smileFace,
+                negativeKey: "No" + frownFace
+            ],
+            [
+                positiveKey: "Like" + smileFace,
+                negativeKey: "Don't Like" + frownFace
+            ],
+            [
+                positiveKey: "Done" + smileFace,
+                negativeKey: "More" + frownFace
+            ],
+            [
+                positiveKey: "Happy" + smileFace,
+                negativeKey: "Sad" + frownFace
+            ]
+        ]
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,28 +65,33 @@ class ViewController: UIViewController {
         negativeButton.layer.borderColor    = UIColor.whiteColor().CGColor
         negativeButton.addTarget(self, action: #selector(ViewController.negativeButtonAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
         
-        //let positiveText = NSLocalizedString("ANSWER_YES", comment: "Yes")
-        let negativeText = NSLocalizedString("ANSWER_NO", comment: "No")
+//        let positiveText = NSLocalizedString("ANSWER_YES", comment: "Yes")
+//        let negativeText = NSLocalizedString("ANSWER_NO", comment: "No")
         
         // Mark:  Setup buttons for initial startup.
         
-        // Would still like to have button text be as large as possible,
-        // but cannot get it to work correctly.
-        // Would also like text to always be two lines.
-        // Top line would be text from dictionary or user set text.
-        // Bottom line would be emoji smiley face or frowning face.
+        let answersMap = possibleAnswersMap();
         
-        positiveButton.setTitle(positiveResponses["positive1"], forState: UIControlState.Normal)
-        //positiveButton.titleLabel?.font = UIFont.boldSystemFontOfSize(28)
-        positiveButton.titleLabel?.numberOfLines = 1
-        positiveButton.titleLabel?.adjustsFontSizeToFitWidth = true
-        positiveButton.titleLabel?.lineBreakMode = NSLineBreakMode.ByClipping
-        positiveButton.accessibilityLabel       = positiveResponses["positive1"]
-        positiveButton.isAccessibilityElement   = true
+        let positiveResponse = answersMap[0][positiveKey]
+        let negativeResponse = answersMap[0][negativeKey]
         
-        negativeButton.setTitle(negativeText, forState: UIControlState.Normal)
-        negativeButton.accessibilityLabel       = negativeText
-        negativeButton.isAccessibilityElement   = true
+        positiveButton.setTitle(positiveResponse, forState: UIControlState.Normal)
+        positiveButton.titleLabel?.adjustsFontSizeToFitWidth    = true
+        positiveButton.titleLabel?.lineBreakMode                = .ByWordWrapping
+        positiveButton.titleLabel?.minimumScaleFactor           = 0.01
+        positiveButton.titleLabel?.font                         = UIFont.systemFontOfSize(100)
+        positiveButton.titleLabel?.textAlignment                = NSTextAlignment.Center
+        positiveButton.accessibilityLabel                       = positiveResponse
+        positiveButton.isAccessibilityElement                   = true
+        
+        negativeButton.setTitle(negativeResponse, forState: UIControlState.Normal)
+        negativeButton.titleLabel?.adjustsFontSizeToFitWidth    = true
+        negativeButton.titleLabel?.lineBreakMode                = .ByWordWrapping
+        negativeButton.titleLabel?.minimumScaleFactor           = 0.01
+        negativeButton.titleLabel?.font                         = UIFont.systemFontOfSize(100)
+        negativeButton.titleLabel?.textAlignment                = NSTextAlignment.Center
+        negativeButton.accessibilityLabel                       = negativeResponse
+        negativeButton.isAccessibilityElement                   = true
         
         buttonStack.addArrangedSubview(positiveButton)
         buttonStack.addArrangedSubview(negativeButton)
@@ -82,17 +100,28 @@ class ViewController: UIViewController {
         buttonStack.distribution            = UIStackViewDistribution.FillEqually
         buttonStack.spacing                 = 20
         
+
         // MARK: Add swipe gesture recognizer.
         
-        // Found some examples online.
-        // Not sure it is being implemented correctly.
-
-/*      let swipeView: UIView
-        swipeView.addTarget(self, action: #selector(ViewController.swipeAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
-        swipeRec.addTarget(self, action: #selector(ViewController.swipedView))
-        swipeView.addGestureRecognizer(swipeRec)
-        swipeView.userInteractionEnabled = true
- */
+        let swipeGestureDown    : UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(swipeScreen))
+        let swipeGestureUp      : UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(swipeScreen))
+        let swipeGestureLeft    : UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(swipeScreen))
+        let swipeGestureRight   : UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(swipeScreen))
+        
+        swipeGestureDown.numberOfTouchesRequired    = 1
+        swipeGestureUp.numberOfTouchesRequired      = 1
+        swipeGestureLeft.numberOfTouchesRequired    = 1
+        swipeGestureRight.numberOfTouchesRequired   = 1
+        
+        swipeGestureDown.direction  = .Down
+        swipeGestureUp.direction    = .Up
+        swipeGestureLeft.direction  = .Left
+        swipeGestureRight.direction = .Right
+        
+        self.view.addGestureRecognizer(swipeGestureDown)
+        self.view.addGestureRecognizer(swipeGestureUp)
+        self.view.addGestureRecognizer(swipeGestureLeft)
+        self.view.addGestureRecognizer(swipeGestureRight)
     }
 
     override func didReceiveMemoryWarning() {
@@ -192,11 +221,67 @@ class ViewController: UIViewController {
     
     // Mark:  Swipe Actions
     
-    func swipeAction() {
-        // SwipeRight in portrait or SwipeDown in landscape -
-        //      Get previous button response text from dictionary.
-        // SwipeLeft in portrait or SwipeUp in landscape -
-        //      Get next button response text from dictionary.
+    func swipeScreen(gesture: UISwipeGestureRecognizer) -> Void {
+        print("Gesture: \(gesture)")
+        
+        let maxOffset = possibleAnswersMap().count - 1
+        
+        // Reset going up.
+        if (swipeIndex < 0) {
+            swipeIndex = 0;
+        }
+        
+        // Reset going down.
+        if (swipeIndex > maxOffset) {
+            swipeIndex = -1;
+        }
+        
+        switch (gesture.direction) {
+        case UISwipeGestureRecognizerDirection.Down:
+            swipeIndex += 1
+            
+            if (swipeIndex > maxOffset) {
+                swipeIndex = 0
+            }
+            
+            break;
+        case UISwipeGestureRecognizerDirection.Up:
+            swipeIndex -= 1
+            
+            if (swipeIndex < 0) {
+                swipeIndex = maxOffset
+            }
+            break;
+        case UISwipeGestureRecognizerDirection.Left:
+            swipeIndex += 1
+            
+            if (swipeIndex > maxOffset) {
+                swipeIndex = 0
+            }
+            
+            break;
+        case UISwipeGestureRecognizerDirection.Right:
+            swipeIndex -= 1
+            
+            if (swipeIndex < 0) {
+                swipeIndex = maxOffset
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        let checkOffset = min(max(maxOffset, swipeIndex), swipeIndex); // Determine the direction swiped, and of they are at the beginning or end of the answers array map.
+        
+        print("offsets: check: \(checkOffset) -> swipeIndex: \(swipeIndex)")
+        
+        
+        positiveButton.setTitle(possibleAnswersMap()[checkOffset][positiveKey], forState: UIControlState.Normal)
+        negativeButton.setTitle(possibleAnswersMap()[checkOffset][negativeKey], forState: UIControlState.Normal)
+        
+        
     }
+    
 }
 
