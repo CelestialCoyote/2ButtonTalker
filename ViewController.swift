@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import AVFoundation
+
 
 class ViewController: UIViewController {
     
@@ -23,6 +25,9 @@ class ViewController: UIViewController {
     
     let smileFace: String   = "\n🙂"
     let frownFace: String   = "\n🙁"
+    
+    let synthVoice = AVSpeechSynthesizer()
+    var synthSpeak = AVSpeechUtterance(string: "")
     
     private func possibleAnswersMap() -> [[String : String]] {
         return [
@@ -48,6 +53,9 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        
+        // Mark:  Setup stack view and button position and size.
+        
         view.addSubview(buttonStack)
         
         view.backgroundColor                = UIColor.blackColor()
@@ -57,18 +65,23 @@ class ViewController: UIViewController {
         positiveButton.layer.cornerRadius   = 15.0
         positiveButton.layer.borderWidth    = 5.0
         positiveButton.layer.borderColor    = UIColor.whiteColor().CGColor
-        positiveButton.addTarget(self, action: #selector(ViewController.positiveButtonAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
+        positiveButton.addTarget(self,
+                                 action: #selector(ViewController.positiveButtonAction(_:)),
+                                 forControlEvents: UIControlEvents.TouchUpInside)
         
         negativeButton.backgroundColor      = UIColor.redColor()
         negativeButton.layer.cornerRadius   = 15.0
         negativeButton.layer.borderWidth    = 5.0
         negativeButton.layer.borderColor    = UIColor.whiteColor().CGColor
-        negativeButton.addTarget(self, action: #selector(ViewController.negativeButtonAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
+        negativeButton.addTarget(self,
+                                 action: #selector(ViewController.negativeButtonAction(_:)),
+                                 forControlEvents: UIControlEvents.TouchUpInside)
         
 //        let positiveText = NSLocalizedString("ANSWER_YES", comment: "Yes")
 //        let negativeText = NSLocalizedString("ANSWER_NO", comment: "No")
+
         
-        // Mark:  Setup buttons for initial startup.
+        // Mark:  Setup button text properties.
         
         let answersMap = possibleAnswersMap();
         
@@ -76,22 +89,18 @@ class ViewController: UIViewController {
         let negativeResponse = answersMap[0][negativeKey]
         
         positiveButton.setTitle(positiveResponse, forState: UIControlState.Normal)
-        positiveButton.titleLabel?.adjustsFontSizeToFitWidth    = true
-        positiveButton.titleLabel?.lineBreakMode                = .ByWordWrapping
-        positiveButton.titleLabel?.minimumScaleFactor           = 0.01
-        positiveButton.titleLabel?.font                         = UIFont.systemFontOfSize(100)
+        positiveButton.titleLabel?.font                         = UIFont.systemFontOfSize(60)
         positiveButton.titleLabel?.textAlignment                = NSTextAlignment.Center
-        positiveButton.accessibilityLabel                       = positiveResponse
-        positiveButton.isAccessibilityElement                   = true
+        positiveButton.titleLabel?.lineBreakMode                = .ByWordWrapping
+        //positiveButton.titleLabel?.adjustsFontSizeToFitWidth    = true
+        //positiveButton.titleLabel?.minimumScaleFactor           = 0.01
         
         negativeButton.setTitle(negativeResponse, forState: UIControlState.Normal)
-        negativeButton.titleLabel?.adjustsFontSizeToFitWidth    = true
-        negativeButton.titleLabel?.lineBreakMode                = .ByWordWrapping
-        negativeButton.titleLabel?.minimumScaleFactor           = 0.01
-        negativeButton.titleLabel?.font                         = UIFont.systemFontOfSize(100)
+        negativeButton.titleLabel?.font                         = UIFont.systemFontOfSize(60)
         negativeButton.titleLabel?.textAlignment                = NSTextAlignment.Center
-        negativeButton.accessibilityLabel                       = negativeResponse
-        negativeButton.isAccessibilityElement                   = true
+        negativeButton.titleLabel?.lineBreakMode                = .ByWordWrapping
+        //negativeButton.titleLabel?.adjustsFontSizeToFitWidth    = true
+        //negativeButton.titleLabel?.minimumScaleFactor           = 0.01
         
         buttonStack.addArrangedSubview(positiveButton)
         buttonStack.addArrangedSubview(negativeButton)
@@ -136,12 +145,11 @@ class ViewController: UIViewController {
         let top = topLayoutGuide.length
         let bottom = bottomLayoutGuide.length
         
-        buttonStack.frame = CGRect(
-            x: 0,
-            y: top,
-            width: view.frame.width,
-            height: view.frame.height - top - bottom
-            ).insetBy(dx: 20, dy: 20)
+        buttonStack.frame = CGRect( x: 0,
+                                    y: top,
+                                    width: view.frame.width,
+                                    height: view.frame.height - top - bottom
+                                    ).insetBy(dx: 20, dy: 20)
         
         dispatch_async(dispatch_get_main_queue())
         {
@@ -156,6 +164,67 @@ class ViewController: UIViewController {
         }
     }
     
+    
+    // Mark:  Swipe Actions
+    
+    func swipeScreen(gesture: UISwipeGestureRecognizer) -> Void {
+        print("Gesture: \(gesture)")
+        
+        let maxOffset = possibleAnswersMap().count - 1
+        
+        // Reset going up.
+        if (swipeIndex < 0) {
+            swipeIndex = 0;
+        }
+        
+        // Reset going down.
+        if (swipeIndex > maxOffset) {
+            swipeIndex = -1;
+        }
+        
+        switch (gesture.direction) {
+        case UISwipeGestureRecognizerDirection.Down:
+            swipeIndex += 1
+            
+            if (swipeIndex > maxOffset) {
+                swipeIndex = 0
+            }
+            break;
+        case UISwipeGestureRecognizerDirection.Up:
+            swipeIndex -= 1
+            
+            if (swipeIndex < 0) {
+                swipeIndex = maxOffset
+            }
+            break;
+        case UISwipeGestureRecognizerDirection.Left:
+            swipeIndex += 1
+            
+            if (swipeIndex > maxOffset) {
+                swipeIndex = 0
+            }
+            break;
+        case UISwipeGestureRecognizerDirection.Right:
+            swipeIndex -= 1
+            
+            if (swipeIndex < 0) {
+                swipeIndex = maxOffset
+            }
+            break;
+            
+        default:
+            break;
+        }
+        
+        let checkOffset = min(max(maxOffset, swipeIndex), swipeIndex); // Determine the direction swiped, and of they are at the beginning or end of the answers array map.
+        
+        print("offsets: check: \(checkOffset) -> swipeIndex: \(swipeIndex)")
+        
+        positiveButton.setTitle(possibleAnswersMap()[checkOffset][positiveKey], forState: UIControlState.Normal)
+        negativeButton.setTitle(possibleAnswersMap()[checkOffset][negativeKey], forState: UIControlState.Normal)
+        
+    }
+
     
     // MARK: CAAnimation Delegate
     
@@ -203,6 +272,11 @@ class ViewController: UIViewController {
         let secondAlpha: Float          = 0.3
         
         self.animatedButton(sender, fromAlpha: firstAlpha, toAlpha: secondAlpha)
+        
+        let buttonText                  = positiveButton.currentTitle!
+        let noSmileText                 = buttonText.stringByReplacingOccurrencesOfString(smileFace, withString: "")
+        
+        self.textToSpeech(sender, speakText: noSmileText)
     }
     
     func negativeButtonAction(sender: UIButton) {
@@ -210,77 +284,30 @@ class ViewController: UIViewController {
         let secondAlpha: Float          = 0.3
         
         self.animatedButton(sender, fromAlpha: firstAlpha, toAlpha: secondAlpha)
+        
+        let buttonText                  = negativeButton.currentTitle!
+        let noFrownText                 = buttonText.stringByReplacingOccurrencesOfString(frownFace, withString: "")
+        
+        self.textToSpeech(sender, speakText: noFrownText)
     }
+    
+    
+    // Mark:  Button speak.
+    
+    func textToSpeech(button: UIButton, speakText: String) -> Void {
+        synthSpeak                      = AVSpeechUtterance(string: speakText)
+        synthSpeak.rate                 = 0.375
+        synthVoice.speakUtterance(synthSpeak)
+    }
+    
     
     func swipedView(){
-        let tapAlert = UIAlertController(title: "Swiped", message: "You just swiped the swipe view", preferredStyle: UIAlertControllerStyle.Alert)
+        let tapAlert = UIAlertController(title: "Swiped",
+                                         message: "You just swiped the swipe view",
+                                         preferredStyle: UIAlertControllerStyle.Alert)
+        
         tapAlert.addAction(UIAlertAction(title: "OK", style: .Destructive, handler: nil))
         self.presentViewController(tapAlert, animated: true, completion: nil)
-    }
-    
-    
-    // Mark:  Swipe Actions
-    
-    func swipeScreen(gesture: UISwipeGestureRecognizer) -> Void {
-        print("Gesture: \(gesture)")
-        
-        let maxOffset = possibleAnswersMap().count - 1
-        
-        // Reset going up.
-        if (swipeIndex < 0) {
-            swipeIndex = 0;
-        }
-        
-        // Reset going down.
-        if (swipeIndex > maxOffset) {
-            swipeIndex = -1;
-        }
-        
-        switch (gesture.direction) {
-        case UISwipeGestureRecognizerDirection.Down:
-            swipeIndex += 1
-            
-            if (swipeIndex > maxOffset) {
-                swipeIndex = 0
-            }
-            
-            break;
-        case UISwipeGestureRecognizerDirection.Up:
-            swipeIndex -= 1
-            
-            if (swipeIndex < 0) {
-                swipeIndex = maxOffset
-            }
-            break;
-        case UISwipeGestureRecognizerDirection.Left:
-            swipeIndex += 1
-            
-            if (swipeIndex > maxOffset) {
-                swipeIndex = 0
-            }
-            
-            break;
-        case UISwipeGestureRecognizerDirection.Right:
-            swipeIndex -= 1
-            
-            if (swipeIndex < 0) {
-                swipeIndex = maxOffset
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        let checkOffset = min(max(maxOffset, swipeIndex), swipeIndex); // Determine the direction swiped, and of they are at the beginning or end of the answers array map.
-        
-        print("offsets: check: \(checkOffset) -> swipeIndex: \(swipeIndex)")
-        
-        
-        positiveButton.setTitle(possibleAnswersMap()[checkOffset][positiveKey], forState: UIControlState.Normal)
-        negativeButton.setTitle(possibleAnswersMap()[checkOffset][negativeKey], forState: UIControlState.Normal)
-        
-        
     }
     
 }
