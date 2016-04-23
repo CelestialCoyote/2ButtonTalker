@@ -40,8 +40,8 @@ class ViewController: UIViewController {
                 negativeKey: "Don't Like" + frownFace
             ],
             [
-                positiveKey: "Done" + smileFace,
-                negativeKey: "More" + frownFace
+                positiveKey: "More" + smileFace,
+                negativeKey: "Done" + frownFace
             ],
             [
                 positiveKey: "Happy" + smileFace,
@@ -183,18 +183,19 @@ class ViewController: UIViewController {
         }
         
         switch (gesture.direction) {
-        case UISwipeGestureRecognizerDirection.Down:
-            swipeIndex += 1
-            
-            if (swipeIndex > maxOffset) {
-                swipeIndex = 0
-            }
-            break;
         case UISwipeGestureRecognizerDirection.Up:
             swipeIndex -= 1
             
             if (swipeIndex < 0) {
                 swipeIndex = maxOffset
+            }
+
+            break;
+        case UISwipeGestureRecognizerDirection.Down:
+            swipeIndex += 1
+            
+            if (swipeIndex > maxOffset) {
+                swipeIndex = 0
             }
             break;
         case UISwipeGestureRecognizerDirection.Left:
@@ -253,8 +254,8 @@ class ViewController: UIViewController {
         
         let customAnimation: CAKeyframeAnimation = CAKeyframeAnimation.init(keyPath: "opacity")
         
-        customAnimation.repeatCount     = 3.0
-        customAnimation.duration        = 0.3
+        customAnimation.repeatCount     = 1.0
+        customAnimation.duration        = 0.75
         customAnimation.autoreverses    = true
         customAnimation.delegate        = self
         customAnimation.values          = [fromAlpha, toAlpha]
